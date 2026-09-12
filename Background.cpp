@@ -8,63 +8,52 @@
 #include <string>
 
 Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
-    // BACKGROUND Y: raised up slightly per your request. Tune freely.
+    // BACKGROUND Y:
     backgroundY(90.0f),
     // BACKGROUND BASE SPEED: background's speed at survival-time-zero
     // = GROUND_SPEED (the constant from GameConfig.h) * this number.
-    // Lower = slower background. Adjust freely -- "make background
-    // go slower" request implemented here.
+    // Lower = slower background
     backgroundSpeedMultiplier(0.6f),
     // BACKGROUND GROWTH DAMPENING: how much of the world's speed
     // growth-over-time carries over to the background. 1.0 = grows
-    // exactly as fast as gameplay speed. 0.6 = only 60% of that growth
-    // rate (i.e. 40% SLOWER growth over time, per your request).
-    // Lower this further for an even more gradual background speedup.
+    // exactly as fast as gameplay speed.
     backgroundGrowthDampening(0.8f),
     skyScaledWidth(0.0f), skyNextTextureIndex(0), skyY(-100.0f),
-    // SKY SPEED: fraction of the current ground speed -- keep this
-    // TINY so the sky barely appears to move (very distant parallax).
+    // SKY SPEED: fraction of the current ground speed
     skySpeedMultiplier(0.08f),
     // SKY OVERLAP: pulls each recycled sky image in by this many
     // pixels so there's never a thin gap line at the joint.
     skyOverlapAmount(4.0f),
     farBuildingScaledWidth(0.0f), farBuildingNextTextureIndex(0),
     // FAR BUILDINGS SPEED: just above skySpeedMultiplier so it's
-    // barely-noticeably faster than the sky, giving extra parallax
+    // barely noticeably faster than the sky, giving extra parallax
     // depth without being distracting.
     farBuildingSpeedMultiplier(0.20f),
-    // FAR BUILDINGS Y: vertical position -- adjust to sit these where
-    // you want them relative to sky/background.
+    // FAR BUILDINGS Y:
     farBuildingY(35.0f),
-    // FAR BUILDINGS OVERLAP: same seam-gap fix as sky/background.
+    // FAR BUILDINGS OVERLAP:
     farBuildingOverlapAmount(4.0f),
     midBuildingScaledWidth(0.0f), midBuildingNextTextureIndex(0),
-    // MID BUILDINGS SPEED: between farBuildingSpeedMultiplier and the
-    // city background's own speed -- gives a 3rd depth step.
+    // MID BUILDINGS SPEED:
     midBuildingSpeedMultiplier(0.38f),
-    // MID BUILDINGS Y: vertical position -- adjust up/down freely.
+    // MID BUILDINGS Y:
     midBuildingY(85.0f),
     midBuildingOverlapAmount(4.0f),
-    // BACKGROUND OVERLAP: same idea as the old tile overlap fix --
-    // pulls each recycled background image in by this many pixels so
-    // there's never a thin gap line at the joint. Bumped from 2.0f to
-    // 4.0f -- the gap was still faintly visible at 2.0f.
+    // BACKGROUND OVERLAP:
     backgroundOverlapAmount(4.0f),
     currentBackgroundSpeed(0.0f),
     tileScaledWidth(0.0f), tileNextTextureIndex(0),
-    // TILE SIZE: independent width/height, same numbers as before.
+    // TILE SIZE: independent width/height...
     tileTargetWidth(1900.0f),
     tileTargetHeight(235.0f),
-    // TILE GROUND LEVEL: vertical position -- adjust to sit tiles
-    // correctly against the new background art's sidewalk line.
+    // TILE GROUND LEVEL: vertical position...
     tileGroundY(475.0f),
-    // TILE OVERLAP: same seam-gap fix as sky/background/farBuildings.
+    // TILE OVERLAP:
     tileOverlapAmount(4.0f),
-    // TILE SPEED: multiplier of the LIVE ground speed -- this is what
-    // obstacles sync to via getTileSpeedMultiplier().
+    // TILE SPEED: multiplier of the LIVE ground speed
     tileSpeedMultiplier(1.6f),
 
-    // UP-LANE TRAFFIC: all adjustable, starting values below.
+    // UP-LANE TRAFFIC:
     upLaneCarSpawnTimer(0.0f),
     upLaneCarSpawnInterval(6.0f),
     upLaneWheelRotationFactor(1.0f),
@@ -74,43 +63,28 @@ Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
     helicopterTimer(0.0f),
     helicopterSpawnInterval(110.0f),
     // HELICOPTER SPEED MULTIPLIER: effective speed = groundSpeed *
-    // this number. Your own tuned value, preserved.
+    // this number.
     helicopterSpeedMultiplier(240.0f / 350.0f),
-    // HELICOPTER SPAWN X: pushed much further right than before
-    // (950 -> 1400). If it still doesn't start from fully off-screen,
-    // your actual window width is likely wider than the ~800px this
-    // whole system assumes -- check your window creation size (in
-    // main.cpp or wherever sf::RenderWindow is constructed) and bump
-    // this number to comfortably exceed it.
-    // HELICOPTER SPAWN: now off-screen LEFT -- it flies RIGHT, passing
-    // the player from behind like it's overtaking them, opposite of
-    // the old right-to-left direction.
+    // HELICOPTER SPAWN X: Horizontal starting position...
     helicopterSpawnX(-300.0f),
     helicopterY(-50.0f),
     helicopterBodyWidth(0.0f)
 {
-    // MUST be the very first thing in this body -- Background gets
-    // constructed as a Game member LONG before any actual Obstacle
-    // object ever spawns during gameplay, but the up-lane Car mirror
-    // loop below needs Obstacle::carWheelLayouts already populated.
-    // texturesLoaded guards this into a no-op if it's already run.
     Obstacle::loadTextures();
 
-    // ==========================================================
-    // LAYER 1: SKY (drawn first/furthest back) -- 2 images, moves
-    // VERY slowly. Adjust skySpeedMultiplier above for pace.
-    // ==========================================================
+    // LAYER 1: SKY (drawn first/furthest back) to 2 images, moves
+    // VERY slowly.
     skyTextures.resize(NUM_SKY_IMAGES);
     skyTextures[0].loadFromFile("assets/Sky1.png");
     skyTextures[1].loadFromFile("assets/Sky2.png");
 
     // SKY SIZE: scaled by HEIGHT only (uniform, preserves the image's
-    // own proportions) -- change 600.0f to make the sky bigger/smaller.
+    // own proportions)
     float skyTargetHeight = 420.0f;
     float skyScale = skyTargetHeight / skyTextures[0].getSize().y;
     skyScaledWidth = skyTextures[0].getSize().x * skyScale;
 
-    // SKY SPACING: see skyOverlapAmount above -- pulls each image in
+    // SKY SPACING: see skyOverlapAmount above: pulls each image in
     // slightly so there's never a gap at the seam.
     float skySpacing = skyScaledWidth - skyOverlapAmount;
 
@@ -121,11 +95,8 @@ Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
     }
     skyNextTextureIndex = 2 % NUM_SKY_IMAGES;
 
-    // ==========================================================
     // LAYER 1.5: FAR BUILDINGS (drawn after sky, before the main
-    // background city) -- 2 images, barely faster than sky. Adjust
-    // farBuildingSpeedMultiplier/farBuildingY above for pace/position.
-    // ==========================================================
+    // background city): 2 images, barely faster than sky.
     farBuildingTextures.resize(NUM_FARBUILDING_IMAGES);
     farBuildingTextures[0].loadFromFile("assets/FarBuildings1.png");
     farBuildingTextures[1].loadFromFile("assets/FarBuildings2.png");
@@ -143,10 +114,8 @@ Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
         farBuildingSprites.back().setPosition({ VIEW_LEFT_EDGE + static_cast<float>(i) * farBuildingSpacing, farBuildingY });
     }
     farBuildingNextTextureIndex = 2 % NUM_FARBUILDING_IMAGES;
-
-    // ==========================================================
-    // LAYER 1.75: MID BUILDINGS -- 3 images, between far and close.
-    // ==========================================================
+    
+    // LAYER 1.75: MID BUILDINGS: 3 images, between far and close.
     midBuildingTextures.resize(NUM_MIDBUILDING_IMAGES);
     midBuildingTextures[0].loadFromFile("assets/MidBuildings1.png");
     midBuildingTextures[1].loadFromFile("assets/MidBuildings2.png");
@@ -165,13 +134,7 @@ Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
     }
     midBuildingNextTextureIndex = 3 % NUM_MIDBUILDING_IMAGES;
 
-    // ==========================================================
-    // LAYER 2: BACKGROUND CITY (drawn second, middle) -- 9 images,
-    // fixed cycling order 1->2->...->9->1... Now that all 9 are the
-    // same pixel dimensions, back to ONE shared scaledWidth for all
-    // of them (simpler than per-image tracking). Scaled by HEIGHT
-    // only. Change 600.0f to resize.
-    // ==========================================================
+    // LAYER 2: BACKGROUND CITY (drawn second, middle) - 40 images.
     bgTextures.resize(NUM_BG_IMAGES_TOTAL);
     for (int i = 0; i < NUM_BG_IMAGES_TOTAL; i++) {
         std::string path = "assets/Background" + std::to_string(i + 1) + ".png";
@@ -180,17 +143,14 @@ Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
             std::cerr << "Warning: could not load " << path << " -- check that this file exists in assets/ and the filename/number matches.\n";
         }
     }
-    // Background13.png is the water one -- FarBuildings shows over it
-    // normally now, no special-case masking anymore.
 
     float bgTargetHeight = 480.0f;
     float bgScale = bgTargetHeight / bgTextures[0].getSize().y;
     scaledWidth = bgTextures[0].getSize().x * bgScale;
 
-    // BACKGROUND SPACING: see backgroundOverlapAmount in Background.h --
-    // each image is placed backgroundOverlapAmount pixels closer than
+    // BACKGROUND SPACING: Each image is placed backgroundOverlapAmount pixels closer than
     // its full width so there's never a gap at the seam. Exactly the
-    // "Background2 starts at 99 instead of 100" idea -- the next
+    // "Background2 starts at 99 instead of 100" idea... the next
     // image is already slightly lapping the previous one's tail end
     // before the scroll brings them together, so no clean full-width
     // gap can ever show.
@@ -204,11 +164,9 @@ Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
     }
     nextTextureIndex = 3 % NUM_BG_IMAGES;
 
-    // ==========================================================
-    // LAYER 3: TILES -- 3 images, Tile1.png / Tile2.png / Tile3.png,
+    // LAYER 3: TILES... 3 images, Tile1.png / Tile2.png / Tile3.png,
     // fixed cycling order (1,2,3,1,2,3...). Width/height independent,
     // ground position ("gravity") and speed all adjustable below.
-    // ==========================================================
     tileTextures.resize(NUM_TILE_IMAGES);
     if (!tileTextures[0].loadFromFile("assets/Tiles1.png")) {
         std::cerr << "Warning: could not load assets/Tiles1.png -- tile layer will be blank at this slot.\n";
@@ -224,10 +182,7 @@ Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
     float tileScaleY = tileTargetHeight / tileTextures[0].getSize().y;
 
     // tileScaledWidth reads the sprite's ACTUAL rendered width (via
-    // getGlobalBounds) instead of just trusting tileTargetWidth
-    // directly -- guarantees the "has this tile fully scrolled off
-    // screen yet?" check always matches what's really on screen, no
-    // matter what tileTargetWidth/Height get tuned to later.
+    // getGlobalBounds).
     sf::Sprite tileSizeProbe(tileTextures[0]);
     tileSizeProbe.setScale({ tileScaleX, tileScaleY });
     tileScaledWidth = tileSizeProbe.getGlobalBounds().size.x;
@@ -243,15 +198,13 @@ Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
         tileSprites.back().setPosition({ VIEW_LEFT_EDGE + static_cast<float>(i) * tileSpacing, tileGroundY });
     }
     tileNextTextureIndex = 5 % NUM_TILE_IMAGES;
-
-    // ==========================================================
-    // UP-LANE TRAFFIC -- decorative only, no collision. Loads once;
+    
+    // UP-LANE TRAFFIC... decorative only, no collision. Loads once;
     // actual car instances are created/removed on the fly in
     // updateUpLaneTraffic(). 4 contiguous blocks: Car (mirrors the
     // real downlane Car, reusing its wheel art directly), Jeep (same
     // idea), Van (same idea), Truck (uplane-only, no downlane
     // counterpart to mirror).
-    // ==========================================================
     upLaneShadeLoaded = upLaneShadeTexture.loadFromFile("assets/Shade.png");
     if (!upLaneShadeLoaded) std::cerr << "Warning: could not load assets/Shade.png -- up-lane vehicle shadows will be invisible until this file exists.\n";
 
@@ -261,8 +214,8 @@ Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
 
     // Car mirrors, indices UPLANE_CAR_START..+COUNT (15). Own body art
     // (facing left, oncoming), but the WHEEL is the exact same
-    // downlane CarWheelN.png file -- a circular tire looks identical
-    // either direction, no separate uplane wheel art needed at all.
+    // downlane CarWheelN.png file, a circular tire looks identical
+    // either direction, no separate uplane wheel art needed!
     for (int i = 0; i < UPLANE_CAR_COUNT; i++) {
         int idx = UPLANE_CAR_START + i;
         std::string bodyPath = "assets/UpLaneCarBody" + std::to_string(i + 1) + ".png";
@@ -329,24 +282,22 @@ Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
 
     loadUpLaneSounds();
 
-    // Same reallocation-safety reserve as obstacles in Game.cpp --
+    // Same reallocation-safety reserve as obstacles in Game.cpp...
     // each car here owns a live sf::Sound too.
     upLaneCars.reserve(32);
-
-    // ==========================================================
+    
     // WHEEL FINE-TUNE, PER UP-LANE VEHICLE.
     //
-    // Car (0-39): COMPUTED MIRROR of downlane's real values now, not
-    // hand-typed -- per your call, since every up-lane Car PNG is now
+    // Car (0-39): COMPUTED MIRROR of downlane's real values, not
+    // hand-typed, since every up-lane Car PNG is now
     // a guaranteed pixel-mirror of its downlane counterpart (done via
     // IbisPaintX's mirror feature only, no redrawing), the math can't
     // drift out of sync the way the old hand-typed table could.
     // X flips (1 - x, both the front/rear X fraction AND the X pixel
     // offset); Y/diameter/Y-offset carry over unchanged since mirroring
     // is purely horizontal.
-    // ==========================================================
     for (int i = 0; i < UPLANE_CAR_COUNT; i++) {
-        // auto, not a named type -- CarWheelLayout is a private nested
+        // auto, not a named type... CarWheelLayout is a private nested
         // type inside Obstacle; only the ACCESSOR function itself is
         // public, so external code can use what it returns but can't
         // name the type directly (Obstacle::CarWheelLayout would fail
@@ -364,8 +315,7 @@ Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
     }
 
     // Jeep (10): COMPUTED MIRROR of downlane's real values now too,
-    // same pattern/reasoning as Car above -- Van/Truck stay hand-typed,
-    // per your call this round.
+    // same pattern/reasoning as Car above.
     for (int i = 0; i < UPLANE_JEEP_COUNT; i++) {
         int idx = UPLANE_JEEP_START + i;
         const auto& dl = Obstacle::getJeepWheelLayout(i);
@@ -380,7 +330,7 @@ Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
         upLaneWheelLayouts[idx].rearOffsetY = dl.rearOffsetY;
     }
 
-    // Van -- PLACEHOLDER, set directly per variant. Also untouched by
+    // Van PLACEHOLDER, set directly per variant. Also untouched by
     // the mirroring change.
     upLaneWheelLayouts[UPLANE_VAN_START + 0] = { 0.801f, 0.917f, 0.175f, 0.922f, 0.132f }; // Van1
     upLaneWheelLayouts[UPLANE_VAN_START + 1] = { 0.812f, 0.891f, 0.220f, 0.889f, 0.144f }; // Van2
@@ -388,21 +338,18 @@ Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
     upLaneWheelLayouts[UPLANE_VAN_START + 3] = { 0.859f, 0.917f, 0.211f, 0.922f, 0.144f }; // Van4
     upLaneWheelLayouts[UPLANE_VAN_START + 4] = { 0.857f, 0.901f, 0.210f, 0.907f, 0.144f }; // Van5
 
-    // Truck -- no downlane counterpart, standalone placeholder numbers.
-    // Re-measure once real art + a Truck rig are in.
-    upLaneWheelLayouts[UPLANE_TRUCK_START + 0] = { 0.792f, 0.913f, 0.107f, 0.908f, 0.106f }; // Truck1 -- PLACEHOLDER
-    upLaneWheelLayouts[UPLANE_TRUCK_START + 1] = { 0.788f, 0.933f, 0.146f, 0.936f, 0.107f }; // Truck2 -- PLACEHOLDER
+    // Truck: no downlane counterpart, standalone placeholder numbers.
+    upLaneWheelLayouts[UPLANE_TRUCK_START + 0] = { 0.792f, 0.913f, 0.107f, 0.908f, 0.106f }; // Truck1 - PLACEHOLDER
+    upLaneWheelLayouts[UPLANE_TRUCK_START + 1] = { 0.788f, 0.933f, 0.146f, 0.936f, 0.107f }; // Truck2 - PLACEHOLDER
 
 
-    // ==========================================================
-    // UP-LANE SIZE + SPEED + GROUND Y, PER VARIANT -- one shared value
+    // UP-LANE SIZE + SPEED + GROUND Y, PER VARIANT - one shared value
     // per TYPE block (Car/Jeep/Van/Truck), matching how each type
     // rendered before this extension. Jeep/Van/Truck sit taller and
     // LOWER (bigger groundY) than Car so their extra height doesn't
     // push them up into the down-lane. All still independently
     // overridable per-index below the loops if any one variant ever
     // needs to differ from its type.
-    // ==========================================================
     upLaneCarTargetHeights.resize(NUM_UPLANE_VARIANTS);
     upLaneCarSpeedMultipliers.resize(NUM_UPLANE_VARIANTS);
     upLaneCarGroundYs.resize(NUM_UPLANE_VARIANTS);
@@ -428,11 +375,9 @@ Background::Background() : scaledWidth(0.0f), nextTextureIndex(0),
         upLaneCarGroundYs[i] = 340.0f; // PUSH LOWER (increase) if it still sits too high/close to your lane
     }
 
-    // ==========================================================
-    // HELICOPTER -- single body sprite, no rotor/tail-rotor pieces.
+    // HELICOPTER -- single body sprite.
     // 4 body variants loaded, one picked at random per spawn (see
-    // updateHelicopter()) -- 25% chance each.
-    // ==========================================================
+    // updateHelicopter())... 25% chance each.
     heliBodyTextures.resize(NUM_HELI_VARIANTS);
     heliBodyTextures[0].loadFromFile("assets/Helicopter1.png");
     heliBodyTextures[1].loadFromFile("assets/Helicopter2.png");
@@ -473,9 +418,8 @@ void Background::updateHelicopter(float deltaTime, float groundSpeed, bool isPla
     heliBodySprite->setPosition(bodyPos);
 
     // HELICOPTER EXIT: uses VIEW_RIGHT_EDGE (GameConfig.h), not a
-    // hardcoded number -- matches the actual visible right edge of
-    // the zoom-out view, so it doesn't vanish before it's really
-    // off-screen.
+    // hardcoded number... matches the actual visible right edge of
+    // the zoom-out view
     if (bodyPos.x > VIEW_RIGHT_EDGE) {
         helicopterActive = false;
     }
@@ -501,14 +445,14 @@ float Background::getHelicopterVolumeFactor() const {
 }
 
 void Background::loadUpLaneSounds() {
-    // GENERIC up-lane passing sound -- SEDANS ONLY now (0-4). Gated
+    // GENERIC up-lane passing sound... SEDANS ONLY now (0-4). Gated
     // by score >= 10,000, see updateUpLaneTraffic().
     upLaneEngineBufferLoaded = upLaneEngineBuffer.loadFromFile("assets/UpLaneCarPass.wav");
     if (!upLaneEngineBufferLoaded) {
         std::cerr << "Warning: could not load assets/UpLaneCarPass.wav -- sedan up-lane engine (post-10000) will be silent.\n";
     }
 
-    // EARLY sedan sound -- plays from the start of the run until
+    // EARLY sedan sound... plays from the start of the run until
     // score hits 10,000, then UpLaneCarPass.wav (above) takes over.
     upLaneEngineBufferEarlyLoaded = upLaneEngineBufferEarly.loadFromFile("assets/UpLaneCarPassEarly.wav");
     if (!upLaneEngineBufferEarlyLoaded) std::cerr << "Warning: could not load assets/UpLaneCarPassEarly.wav\n";
@@ -547,12 +491,12 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
     // counting once unlocked, so it doesn't instantly fire the moment
     // it unlocks from having silently accumulated beforehand.
     if (currentScoreForAudioGate >= 200) {
-        // ---- Spawn a new one on a timer ----
+        // - Spawn a new one on a timer -
         upLaneCarSpawnTimer += deltaTime;
         if (upLaneCarSpawnTimer >= upLaneCarSpawnInterval) {
             upLaneCarSpawnTimer = 0.0f;
 
-            // ---- SCATTERED BURST SPAWNING ----
+            // - SCATTERED BURST SPAWNING -
         // Cars come in clusters of 1-2 (max 2 now -- 3 was too tight,
         // especially with truck/van being much longer than sedans).
         // Between-cluster gap is a real breather, never over 2s. The
@@ -581,7 +525,7 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
 
         // Capture the CURRENT real position of whichever car is most
         // recently spawned (if any exist) BEFORE adding this new one
-        // -- used below as a hard, position-based safety floor so no
+        // - used below as a hard, position-based safety floor so no
         // car can ever spawn overlapping/behind another, regardless
         // of what the time-interval math predicted. This is what
         // actually guarantees no overtaking, independent of any lead-
@@ -596,7 +540,7 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
         const UpLaneWheelLayout& layout = upLaneWheelLayouts[variant];
 
         // Small per-instance jitter (+/-8%) so same-type cars aren't
-        // all moving in perfect lockstep -- reads as more alive. Kept
+        // all moving in perfect lockstep - reads as more alive. Kept
         // deliberately small: the 4 types are already a tight cluster
         // (1.5-1.7), and widening this too much would reopen the same
         // catch-up risk that clustering the base speeds was meant to
@@ -609,7 +553,7 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
 
         // NOW that we know this car's real scaled width, set the next
         // spawn interval: within a cluster, it's "this car's width /
-        // its speed" plus a small buffer -- guarantees the NEXT car
+        // its speed" plus a small buffer - guarantees the NEXT car
         // can't appear until this one has actually cleared, no matter
         // how long it is (fixes truck/van overlapping). Between
         // clusters, same 0.8-2.0s breather as before, capped at 2s.
@@ -618,7 +562,7 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
         bool willContinueBurst = (upLaneBurstRemaining > 0);
         if (willContinueBurst) {
             // 3x the bare minimum safe clearance is the CLOSEST these
-            // two can ever be -- never tighter than that, however
+            // two can ever be - never tighter than that, however
             // random variation on top means it's not a fixed distance
             // every time, sometimes noticeably more than 3x.
             float minClearance = (thisCarWidth + 40.0f) * 3.0f;
@@ -628,7 +572,7 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
             float normalRoll = 0.9f + (static_cast<float>(std::rand() % 1600) / 1000.0f); // 0.9-2.5s
             // Safety floor: whatever vehicle just spawned (car, van,
             // or truck) must have enough time to actually clear
-            // before the next cluster starts -- this only kicks in if
+            // before the next cluster starts - this only kicks in if
             // the normal random roll happened to be shorter than that,
             // which shouldn't be common now that all speeds match, but
             // guards against a wide vehicle (truck/van) getting a too-
@@ -639,7 +583,7 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
         }
 
         // Van/Truck spawn extra travel-time further right than the
-        // visible edge -- their engine sound starts the instant the
+        // visible edge - their engine sound starts the instant the
         // object is created (below), so by the time they actually
         // scroll into view, the sound's already been playing that long.
         bool isBigVehicle = (variant >= UPLANE_VAN_START); // Van or Truck (both ranges are contiguous at the end)
@@ -650,7 +594,7 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
 
         // HARD SAFETY CLAMP: whatever the natural spawn point above
         // works out to, it can never be at or behind the previous
-        // car's current position -- this is what makes "no overtake"
+        // car's current position - this is what makes "no overtake"
         // an actual guarantee instead of something the interval math
         // merely predicts. This is the real fix for the truck-related
         // overlap bug: a big lead-time (like truck's 1.2s) used to be
@@ -659,7 +603,7 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
         if (hadPreviousCar) {
             // Flat 60px is fine for sedan-to-sedan gaps, but a truck is
             // so much bigger than the rest that the same 60px reads as
-            // a near-miss next to one -- widen it specifically when a
+            // a near-miss next to one - widen it specifically when a
             // truck is on EITHER side of this gap (the one just ahead,
             // or the one about to spawn), leave everything else at the
             // original 60px so normal car/jeep/van pacing is untouched.
@@ -690,9 +634,9 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
             bodyBounds.position.y + bodyBounds.size.y * layout.rearYFrac + layout.rearOffsetY
         });
 
-        // Shadow -- same approach as the down-lane vehicles: full body
+        // Shadow: same approach as the down-lane vehicles: full body
         // width (+5% overhang), height kept independent/fixed so wide
-        // vehicles (van/truck) don't turn it into a thick blob.
+        // vehicles (van/truck).
         if (upLaneShadeLoaded) {
             car.shadow.emplace(upLaneShadeTexture);
             sf::Vector2u shadeTexSize = upLaneShadeTexture.getSize();
@@ -710,9 +654,9 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
             }
         }
 
-        // ---- Engine sound: Truck and Van each get their own distinct
+        // Engine sound: Truck and Van each get their own distinct
         // buffer; Car and Jeep share the one generic passing-engine
-        // buffer (same "isSedan" bucket as before this extension). ----
+        // buffer (same "isSedan" bucket as before this extension).
         bool isTruck = (variant >= UPLANE_TRUCK_START);
         bool isVan = (variant >= UPLANE_VAN_START && variant < UPLANE_TRUCK_START);
         bool sedanUnlocked = currentScoreForAudioGate >= SEDAN_AUDIO_UNLOCK_SCORE;
@@ -735,13 +679,13 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
     }
     } // closes the score >= 500 gate wrapping the whole spawn-trigger block
 
-    // ---- Move + spin every active instance, same old-style plain
+    // Move + spin every active instance, same old-style plain
     // leftward scroll (oncoming direction), not the closing-speed math
     // the real interactive cars use. Speed is looked up from each
-    // car's OWN jittered speedMultiplier now, set once at spawn --
-    // not the shared type value -- so it keeps whatever jitter it
+    // car's OWN jittered speedMultiplier now, set once at spawn -
+    // not the shared type value - so it keeps whatever jitter it
     // spawned with for its whole lifetime instead of drifting if the
-    // type's base value changes mid-run. ----
+    // type's base value changes mid-run.
     for (auto& car : upLaneCars) {
         float upLaneSpeed = groundSpeed * car.speedMultiplier;
         float moveAmount = -upLaneSpeed * deltaTime;
@@ -753,7 +697,7 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
 
         // Rotation is driven by the SIGNED movement (moveAmount), not
         // just speed magnitude, so the spin direction always matches
-        // which way the car is actually traveling -- up-lane traffic
+        // which way the car is actually traveling - up-lane traffic
         // moves left (moveAmount negative), so this correctly spins
         // wheels the opposite way from the real rightward-moving cars.
         car.wheelRotationDeg += upLaneWheelRotationFactor * moveAmount;
@@ -767,23 +711,23 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
         bool isSedan = !isTruck && !isVan; // Car or Jeep mirror -- same generic engine/horn bucket as before
 
         // Fraction of the trip from spawn (VIEW_RIGHT_EDGE) to the
-        // left edge -- used for the horn trigger only.
+        // left edge - used for the horn trigger only.
         float traveled = VIEW_RIGHT_EDGE - car.body.getPosition().x;
         float totalTrip = VIEW_RIGHT_EDGE - VIEW_LEFT_EDGE;
         float fraction = (totalTrip > 0.0f) ? (traveled / totalTrip) : 0.0f;
 
-        // ---- ENGINE VOLUME -- flat, no code-side curve (fade shape
+        // ENGINE VOLUME - flat, no code-side curve (fade shape
         // lives in the .wav file itself now). Sedan sound is still
         // gated to silence until score >= 10,000, then plays LOUD
         // (1.4x boost) once unlocked. Slow-motion volume multiplier
         // layered on top of all of this, same as every other gameplay
-        // sound in Game.cpp. ----
+        // sound in Game.cpp.
         if (car.engineSound) {
             float baseVolume = isTruck ? truckEngineVolume : (isVan ? vanEngineVolume : upLaneEngineVolume);
 
             if (isSedan) {
                 // Which SOUND plays (early vs late) was already decided
-                // at spawn time based on score -- no more silence gate,
+                // at spawn time based on score - no more silence gate,
                 // just play whichever one this car got, boosted a bit
                 // once past the unlock score for extra impact.
                 bool unlocked = currentScoreForAudioGate >= SEDAN_AUDIO_UNLOCK_SCORE;
@@ -793,7 +737,7 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
             }
 
             // Truck: flat pitch, 20% faster/higher than normal (fixed
-            // 1.2x) -- its own distinct sound, no speed-scaling.
+            // 1.2x) - its own distinct sound, no speed-scaling.
             // Sedans + van: pitch scales with how fast the world is
             // moving, same as before. Slow-motion pitch multiplies
             // into whichever of these was already chosen.
@@ -807,10 +751,10 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
             }
         }
 
-        // ---- HORN TRIGGER: fires once per car. Truck: 30% chance at
+        // HORN TRIGGER: fires once per car. Truck: 30% chance at
         // ~30% across the trip. Van: same 20%/70% rule as sedans for
         // now (own buffer, same timing). Sedan horn only rolls once
-        // score >= 10,000 (matches the engine gate). ----
+        // score >= 10,000 (matches the engine gate).
         if (!car.hornRolled) {
             float triggerFraction = isTruck ? 0.30f : 0.70f;
             int chancePercent = isTruck ? 30 : 20;
@@ -832,9 +776,9 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
         }
     }
 
-    // ---- Remove only once off-screen AND the engine sound has
+    // Remove only once off-screen AND the engine sound has
     // actually finished playing on its own -- so it isn't cut off the
-    // instant the car scrolls past the edge. ----
+    // instant the car scrolls past the edge.
     upLaneCars.erase(
         std::remove_if(upLaneCars.begin(), upLaneCars.end(),
             [](const UpLaneCarInstance& car) {
@@ -849,7 +793,7 @@ void Background::updateUpLaneTraffic(float deltaTime, float groundSpeed) {
 }
 
 void Background::update(float deltaTime, float groundSpeed, bool isPlaying) {
-    // ---- Compute background's own independent, slower speed ----
+    // Compute background's own independent, slower speed -
     // Base speed at survival-time-zero, plus a DAMPENED share of
     // however much groundSpeed has grown above its starting constant
     // so far this run. This is what makes the background scroll
@@ -858,9 +802,9 @@ void Background::update(float deltaTime, float groundSpeed, bool isPlaying) {
     float backgroundSpeed = (GROUND_SPEED * backgroundSpeedMultiplier) + (speedGrownSoFar * backgroundGrowthDampening);
     currentBackgroundSpeed = backgroundSpeed; // cached in case it's useful later -- obstacles sync to tiles again now
 
-    // ---- Sky: very slow, derived from the background's own
+    // Sky: very slow, derived from the background's own
     // (already slower) speed, so the parallax ordering stays
-    // sky < far buildings < background. ----
+    // sky < far buildings < background.
     float effectiveSkySpeed = backgroundSpeed * skySpeedMultiplier;
     float skySpacing = skyScaledWidth - skyOverlapAmount;
     for (auto& s : skySprites) {
@@ -879,8 +823,8 @@ void Background::update(float deltaTime, float groundSpeed, bool isPlaying) {
         }
     }
 
-    // ---- Far buildings: barely faster than sky, sits in front of it,
-    // behind the main background city. ----
+    // Far buildings: barely faster than sky, sits in front of it,
+    // behind the main background city.
     float effectiveFarBuildingSpeed = backgroundSpeed * farBuildingSpeedMultiplier;
     float farBuildingSpacing = farBuildingScaledWidth - farBuildingOverlapAmount;
     for (auto& s : farBuildingSprites) {
@@ -899,7 +843,7 @@ void Background::update(float deltaTime, float groundSpeed, bool isPlaying) {
         }
     }
 
-    // ---- Mid buildings: faster than far, slower than close city. ----
+    // - Mid buildings: faster than far, slower than close city. -
     float effectiveMidBuildingSpeed = backgroundSpeed * midBuildingSpeedMultiplier;
     float midBuildingSpacing = midBuildingScaledWidth - midBuildingOverlapAmount;
     for (auto& s : midBuildingSprites) {
@@ -918,7 +862,7 @@ void Background::update(float deltaTime, float groundSpeed, bool isPlaying) {
         }
     }
 
-    // ---- Background city: uses its own computed backgroundSpeed ----
+    // - Background city: uses its own computed backgroundSpeed -
     float bgSpacing = scaledWidth - backgroundOverlapAmount;
     for (auto& s : bgSprites) {
         s.move({ -backgroundSpeed * deltaTime, 0.0f });
@@ -938,12 +882,12 @@ void Background::update(float deltaTime, float groundSpeed, bool isPlaying) {
     }
 
     // FarBuildings visibility masking over the water background has
-    // been removed per request -- it now shows over every background,
+    // been removed per request... it now shows over every background,
     // including the water one, just like the rest of the layers.
 
-    // ---- Tiles: slightly faster than groundSpeed (the SAME speed
+    // Tiles: slightly faster than groundSpeed (the SAME speed
     // value obstacles use, since obstacles sit on the tiles and must
-    // stay in lockstep with them, not with the slower background). ----
+    // stay in lockstep with them, not with the slower background).
     float effectiveTileSpeed = groundSpeed * tileSpeedMultiplier;
     float tileSpacing = tileScaledWidth - tileOverlapAmount;
     for (auto& s : tileSprites) {
@@ -1043,10 +987,10 @@ void Background::draw(sf::RenderWindow& window) {
     }
 
     // Up-lane traffic: decorative only, drawn AFTER tiles so it's not
-    // covered by them -- matches how the real interactive cars
+    // covered by them...matches how the real interactive cars
     // (drawn separately by Game.cpp) always sit on top of everything.
     for (auto& car : upLaneCars) {
-        // ALL up-lane variants now draw wheels on top of the body --
+        // ALL up-lane variants now draw wheels on top of the body...
         // same fix as truck/van and downlane cars before them.
         // Wheels-underneath relied on each body art having a real
         // transparent wheel-well cutout lined up exactly right, which
